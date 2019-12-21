@@ -111,7 +111,12 @@ def Play(_driver, _url):
         _driver.find_element_by_xpath("/html/body/div/div/div[1]/div[3]/div[2]/label/input").click()
     except:
         pass
-
+    
+    # 일본어 폰트 크기 크게 함
+    japan_text_elements = driver.find_elements_by_class_name("subtitle-transcription")
+    for japan_text_element in japan_text_elements:
+        driver.execute_script("arguments[0].setAttribute('style','font-size:40px')", japan_text_element)
+    
     # 재생 버튼으로 포커스 이동
     iframes = _driver.find_elements_by_tag_name('iframe')
     _driver.switch_to.frame(iframes[0])
