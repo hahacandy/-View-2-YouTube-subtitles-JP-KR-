@@ -62,7 +62,6 @@ def Translate_JPto_KO(_str_jp):
         return "네이버 id 정보 변경"
 
 
-
 # 프로그램 사용에 필요한 폴더를 중복 확인 후 없으면 생성
 def create_folder():
     try:
@@ -84,7 +83,6 @@ def create_folder():
 
 # 시간이 10미만 숫자라면 2자리로 변환, 9라면 09로 변환
 def changeTime(_time):
-
     c_time = ''
     if _time < 10:
         c_time = "0" + str(_time)
@@ -173,12 +171,6 @@ def Play(_driver, _url):
     # 포커스 나옴
     _driver.switch_to.default_content()
 
-    # 한국어 자막 보이기 클릭
-    try:
-        _driver.find_element_by_xpath("/html/body/div/div/div[1]/div[3]/div[2]/label/input").click()
-    except:
-        pass
-
     # 일본어 폰트 크기 크게 함
     japan_text_elements = driver.find_elements_by_class_name("subtitle-text")
     for idx, japan_text_element in enumerate(japan_text_elements):
@@ -188,7 +180,11 @@ def Play(_driver, _url):
         except:
             continue
         # 일본어 폰트 크기 40px로 변경
-        driver.execute_script("arguments[0].setAttribute('style','font-size:"+str(font_size)+"px')", japan_text_element[0])
+        driver.execute_script("arguments[0].setAttribute('style','font-size:" + str(font_size) + "px')",
+                              japan_text_element[0])
+        # 한국어 자막 흐림 제거
+        driver.execute_script("arguments[0].setAttribute('class','SubtitleText__BlurredText-axonzm-0 hiMIor')"
+                              , japan_text_element[1])
         # 한국어 자막 없으면 직접 만듬
         try:
             # 한국어 자막 없으면 except 코드 실행
@@ -199,16 +195,13 @@ def Play(_driver, _url):
             # parse = re.sub(' ', '', parse)
             if len(parse) > 0:
                 temp = Translate_JPto_KO(parse)
-                if temp == "네이버 id 정보 변경": # api 사용량 다떨어져서 2번째 id로 번역함
+                if temp == "네이버 id 정보 변경":  # api 사용량 다떨어져서 2번째 id로 번역함
                     temp = Translate_JPto_KO(parse)
                 temp = re.sub('[a-zA-Z]', '', temp)
-                script = "arguments[0].innerHTML='"+temp+"'"
+                script = "arguments[0].innerHTML='" + temp + "'"
                 try:
                     # 한국어 자막 추가
                     driver.execute_script(script, japan_text_element[1])
-                    # 한국어 자막 흐림 제거
-                    driver.execute_script("arguments[0].setAttribute('class','SubtitleText__BlurredText-axonzm-0 hiMIor"
-                                          + str(font_size) + "px')",japan_text_element[1])
                 except:
                     pass
 
@@ -234,7 +227,7 @@ if __name__ == "__main__":
 
     # 프로그램 실행에 필요한 폴더를 생성
     create_folder()
-    
+
     # 유튜브 플레이 리스트에서 노래들의 정보를 가져옴
     play_song_urls = getPlaylistLinks(play_list_url)
 
