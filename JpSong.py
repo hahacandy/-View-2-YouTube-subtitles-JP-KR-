@@ -20,8 +20,12 @@ import time
 import random
 from _datetime import datetime
 
+# 아이디가 2개인 이유는 하루 할당량 다 떨어지면 2번째로 교체함
 client_id = ""  # 개발자센터에서 발급받은 Client ID 값
 client_secret = ""  # 개발자센터에서 발급받은 Client Secret 값
+
+client_id2 = ""  # 개발자센터에서 발급받은 Client ID 값
+client_secret2 = ""  # 개발자센터에서 발급받은 Client Secret 값
 
 # 유튜브 플레이 리스트 주소
 play_list_url = ""
@@ -33,21 +37,30 @@ font_size = 35
 
 # 일본어 문자열을 한국어로 번역한 뒤 리턴 (네이버 파파고 nmt)
 def Translate_JPto_KO(_str_jp):
+    global client_id, client_secret
     encText = urllib.parse.quote(_str_jp)
     data = "source=ja&target=ko&text=" + encText
     url = "https://openapi.naver.com/v1/papago/n2mt"
     request = urllib.request.Request(url)
     request.add_header("X-Naver-Client-Id", client_id)
     request.add_header("X-Naver-Client-Secret", client_secret)
-    response = urllib.request.urlopen(request, data=data.encode("utf-8"))
-    rescode = response.getcode()
-    if rescode == 200:
-        response_body = response.read()
-        temp = str(response_body.decode('utf-8'))
-        json_data = json.loads(temp)['message']['result']['translatedText']
-        return json_data
-    else:
-        return "Error Code:" + rescode
+    try:
+        response = urllib.request.urlopen(request, data=data.encode("utf-8"))
+        rescode = response.getcode()
+        if rescode == 200:
+            response_body = response.read()
+            temp = str(response_body.decode('utf-8'))
+            json_data = json.loads(temp)['message']['result']['translatedText']
+            return json_data
+        else:
+            # 에러코드
+            return "Error Code:" + rescode
+    except:
+        # api 사용량 다떨어져서 2번째 client_id로 번역하기 위함
+        client_id = client_id2
+        client_secret = client_secret2
+        return "네이버 id 정보 변경"
+
 
 
 # 프로그램 사용에 필요한 폴더를 중복 확인 후 없으면 생성
@@ -167,27 +180,35 @@ def Play(_driver, _url):
         pass
 
     # 일본어 폰트 크기 크게 함
-    japan_text_elements = driver.find_elements_by_class_name("subtitle-transcription")
     japan_text_elements = driver.find_elements_by_class_name("subtitle-text")
     for idx, japan_text_element in enumerate(japan_text_elements):
         # 자막이 없으면 작동안함
         try:
-            japan_text_element = japan_text_element.find_elements_by_class_name("hiMIor")
+            japan_text_element = japan_text_element.find_elements_by_class_name("SubtitleText__BlurredText-axonzm-0")
         except:
             continue
         # 일본어 폰트 크기 40px로 변경
         driver.execute_script("arguments[0].setAttribute('style','font-size:"+str(font_size)+"px')", japan_text_element[0])
         # 한국어 자막 없으면 직접 만듬
-        if len(japan_text_element) == 1:
+        try:
+            # 한국어 자막 없으면 except 코드 실행
+            _driver.find_element_by_xpath("/html/body/div/div/div[1]/div[3]/div[2]/label/input")
+        except:
             parse = str(japan_text_element[0].text)
             parse = re.sub('[-=.#/?:$},…!()]', '', parse)
-            parse = re.sub(' ', '', parse)
+            # parse = re.sub(' ', '', parse)
             if len(parse) > 0:
                 temp = Translate_JPto_KO(parse)
+                if temp == "네이버 id 정보 변경": # api 사용량 다떨어져서 2번째 id로 번역함
+                    temp = Translate_JPto_KO(parse)
                 temp = re.sub('[a-zA-Z]', '', temp)
-                script = "arguments[0].innerHTML='"+parse+"<br>"+temp+"'"
+                script = "arguments[0].innerHTML='"+temp+"'"
                 try:
-                    driver.execute_script(script, japan_text_element[0])
+                    # 한국어 자막 추가
+                    driver.execute_script(script, japan_text_element[1])
+                    # 한국어 자막 흐림 제거
+                    driver.execute_script("arguments[0].setAttribute('class','SubtitleText__BlurredText-axonzm-0 hiMIor"
+                                          + str(font_size) + "px')",japan_text_element[1])
                 except:
                     pass
 
