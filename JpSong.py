@@ -1,10 +1,16 @@
 # 유튜브의 플레이 리스트에 있는 곡들을 captionpop(자막2개보는사이트) 에서 순차적으로 재생하는 프로그램.
 # 자막은 일본어, 한국어 로 설정되어 있다.
+# 해당 영상이 일본어 자막만 있고 한국어 자막이 없다면 네이버 파파고 번역기로 번역한다
 
+# client_id, client_secret, play_list_url, ran_play, font_size 변수에 알맞은 값을 설정
 # JpSong.py 코드를 한번 실행하면 해당 폴더에 driver, files->dataDir 가 생성됨
 # driver 폴더에 자신의 크롬 버전과 맞는 chromedriver.exe 파일을 두고 재실행 하면 됨.
 
 import errno
+
+import json
+import urllib
+
 from selenium import webdriver
 import os
 from bs4 import BeautifulSoup
@@ -14,10 +20,34 @@ import time
 import random
 from _datetime import datetime
 
+client_id = ""  # 개발자센터에서 발급받은 Client ID 값
+client_secret = ""  # 개발자센터에서 발급받은 Client Secret 값
+
 # 유튜브 플레이 리스트 주소
-play_list_url = "YOUTUBE PLAYLIST URL!"
+play_list_url = ""
 # 랜덤 재생: True(랜덤재생), False(순차재생)
 ran_play = True
+# 일본어 폰트 사이즈
+font_size = 35
+
+
+# 일본어 문자열을 한국어로 번역한 뒤 리턴 (네이버 파파고 nmt)
+def Translate_JPto_KO(_str_jp):
+    encText = urllib.parse.quote(_str_jp)
+    data = "source=ja&target=ko&text=" + encText
+    url = "https://openapi.naver.com/v1/papago/n2mt"
+    request = urllib.request.Request(url)
+    request.add_header("X-Naver-Client-Id", client_id)
+    request.add_header("X-Naver-Client-Secret", client_secret)
+    response = urllib.request.urlopen(request, data=data.encode("utf-8"))
+    rescode = response.getcode()
+    if rescode == 200:
+        response_body = response.read()
+        temp = str(response_body.decode('utf-8'))
+        json_data = json.loads(temp)['message']['result']['translatedText']
+        return json_data
+    else:
+        return "Error Code:" + rescode
 
 
 # 프로그램 사용에 필요한 폴더를 중복 확인 후 없으면 생성
@@ -106,17 +136,6 @@ def getPlaylistLinks(url):
 def Play(_driver, _url):
     _driver.get(_url)
 
-    # 한국어 자막 보이기 클릭
-    try:
-        _driver.find_element_by_xpath("/html/body/div/div/div[1]/div[3]/div[2]/label/input").click()
-    except:
-        pass
-    
-    # 일본어 폰트 크기 크게 함
-    japan_text_elements = driver.find_elements_by_class_name("subtitle-transcription")
-    for japan_text_element in japan_text_elements:
-        driver.execute_script("arguments[0].setAttribute('style','font-size:40px')", japan_text_element)
-    
     # 재생 버튼으로 포커스 이동
     iframes = _driver.find_elements_by_tag_name('iframe')
     _driver.switch_to.frame(iframes[0])
@@ -141,6 +160,37 @@ def Play(_driver, _url):
     # 포커스 나옴
     _driver.switch_to.default_content()
 
+    # 한국어 자막 보이기 클릭
+    try:
+        _driver.find_element_by_xpath("/html/body/div/div/div[1]/div[3]/div[2]/label/input").click()
+    except:
+        pass
+
+    # 일본어 폰트 크기 크게 함
+    japan_text_elements = driver.find_elements_by_class_name("subtitle-transcription")
+    japan_text_elements = driver.find_elements_by_class_name("subtitle-text")
+    for idx, japan_text_element in enumerate(japan_text_elements):
+        # 자막이 없으면 작동안함
+        try:
+            japan_text_element = japan_text_element.find_elements_by_class_name("hiMIor")
+        except:
+            continue
+        # 일본어 폰트 크기 40px로 변경
+        driver.execute_script("arguments[0].setAttribute('style','font-size:"+str(font_size)+"px')", japan_text_element[0])
+        # 한국어 자막 없으면 직접 만듬
+        if len(japan_text_element) == 1:
+            parse = str(japan_text_element[0].text)
+            parse = re.sub('[-=.#/?:$},…!()]', '', parse)
+            parse = re.sub(' ', '', parse)
+            if len(parse) > 0:
+                temp = Translate_JPto_KO(parse)
+                temp = re.sub('[a-zA-Z]', '', temp)
+                script = "arguments[0].innerHTML='"+parse+"<br>"+temp+"'"
+                try:
+                    driver.execute_script(script, japan_text_element[0])
+                except:
+                    pass
+
     # 재생 화면으로 포커스 이동
     iframes = _driver.find_elements_by_tag_name('iframe')
     _driver.switch_to.frame(iframes[0])
@@ -160,6 +210,7 @@ def Play(_driver, _url):
 
 
 if __name__ == "__main__":
+
     # 프로그램 실행에 필요한 폴더를 생성
     create_folder()
     
