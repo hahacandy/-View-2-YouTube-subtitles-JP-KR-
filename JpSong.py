@@ -118,14 +118,14 @@ def Play(_driver, _url):
     time.sleep(1)
 
     # 재생 버튼 클릭
-    try:
-        _driver.find_element_by_xpath("/html/body/div/div/div[4]/button").click()
-    except:
+    while True:
         try:
-            time.sleep(3)
             _driver.find_element_by_xpath("/html/body/div/div/div[4]/button").click()
+            print("클릭")
+            break
         except:
             pass
+        time.sleep(1)
 
     # 포커스 나옴
     _driver.switch_to.default_content()
