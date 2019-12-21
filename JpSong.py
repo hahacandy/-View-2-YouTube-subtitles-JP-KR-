@@ -121,7 +121,13 @@ def Play(_driver, _url):
     while True:
         try:
             _driver.find_element_by_xpath("/html/body/div/div/div[4]/button").click()
-            print("클릭")
+            time.sleep(1)
+
+        except:
+            pass
+
+        try:
+            driver.find_element_by_class_name("ytp-play-button").get_attribute('title')
             break
         except:
             pass
