@@ -172,7 +172,7 @@ def Play(_driver, _url):
     # 재생 버튼 클릭
     while True:
         try:
-            _driver.find_element_by_xpath("/html/body/div/div/div[4]/button").click()
+            _driver.find_element_by_class_name("ytp-large-play-button").click()
             time.sleep(1)
 
         except:
