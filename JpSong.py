@@ -242,7 +242,7 @@ def Play(_driver, _url):
     while True:
         current_stat = driver.find_element_by_class_name("ytp-play-button").get_attribute('title')
 
-        if current_stat == "다시보기":
+        if current_stat == "다시보기" or current_stat == "もう一回見る":
             break
 
         time.sleep(1)
