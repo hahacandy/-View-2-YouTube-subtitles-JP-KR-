@@ -2,7 +2,7 @@
 # 자막은 일본어, 한국어 로 설정되어 있다.
 # 해당 영상이 일본어 자막만 있고 한국어 자막이 없다면 네이버 파파고 번역기로 번역한다
 
-# client_id, client_secret, play_list_url, ran_play, font_size 변수에 알맞은 값을 설정
+# client_id_array, client_secret_array, play_list_url, ran_play, font_size 변수에 알맞은 값을 설정
 # JpSong.py 코드를 한번 실행하면 해당 폴더에 driver, files->dataDir 가 생성됨
 # driver 폴더에 자신의 크롬 버전과 맞는 chromedriver.exe 파일을 두고 재실행 하면 됨.
 
@@ -24,15 +24,17 @@ from _datetime import datetime
 client_id_array = []
 client_secret_array = []
 client_id_array.append("")  # 개발자센터에서 발급받은 Client ID 값
-client_secret_array.append("")              # 개발자센터에서 발급받은 Client Secret 값
-# client_id_array.append("")
-# client_secret_array.append("")
-# client_id_array.append("")
-# client_secret_array.append("")
-# client_id_array.append("")
-# client_secret_array.append("")
-# client_id_array.append("")
-# client_secret_array.append("")
+client_secret_array.append("")  # 개발자센터에서 발급받은 Client Secret 값
+client_id_array.append("")
+client_secret_array.append("")
+client_id_array.append("")
+client_secret_array.append("")
+client_id_array.append("")
+client_secret_array.append("")
+client_id_array.append("")
+client_secret_array.append("")
+
+
 
 client_id = client_id_array.pop()
 client_secret = client_secret_array.pop()
@@ -66,12 +68,15 @@ def Translate_JPto_KO(_str_jp):
             # 에러코드
             return "Error Code:" + rescode
     except:
-        if len(client_id_array) == 0 or len(client_secret_array) == 0:
+        if len(client_id_array) == 0 and len(client_secret_array) == 0:
             return "아이디 다 떨어짐"
-        # api 사용량 다떨어져서 다른 client_id로 교체
-        client_id = client_id_array.pop()
-        client_secret = client_secret_array.pop()
-        return "네이버 id 정보 변경"
+        while len(client_id_array) > 0 and len(client_secret_array) > 0:
+            # api 사용량 다떨어져서 다른 client_id로 교체
+            client_id = client_id_array.pop()
+            client_secret = client_secret_array.pop()
+            if len(client_id) > 0 and len(client_secret) > 0:
+                print("네이버 id 정보 변경, " + str(len(client_id_array)) + "개의 인증 아이디 남음")
+                return "네이버 id 정보 변경"
 
 
 # 프로그램 사용에 필요한 폴더를 중복 확인 후 없으면 생성
@@ -205,15 +210,21 @@ def Play(_driver, _url):
         except:
             parse = str(japan_text_element[0].text)
             parse = re.sub('[-=.#/?:$},…!()]', '', parse)
-            # parse = re.sub(' ', '', parse)
+            parse = re.sub('[a-zA-Z]', '', parse)
+            parse = re.sub(' ', '', parse)
             if len(parse) > 0:
-                temp = Translate_JPto_KO(parse)
-                if temp == "네이버 id 정보 변경":  # api 사용량 다떨어져서 2번째 id로 번역함
+                while True:
                     temp = Translate_JPto_KO(parse)
-                elif temp == "아이디 다 떨어짐":
-                    print("아이디 다 떨어져서 번역불가")
+                    if temp == "네이버 id 정보 변경":  # api 사용량 다떨어져서 다른 id로 번역함
+                        continue
+                    elif temp == "아이디 다 떨어짐":
+                        print("아이디 다 떨어져서 번역불가")
+                        break
+                    else:  # 번역된 가사를 가져왓음
+                        break
+                if temp == "아이디 다 떨어짐":
+                    print("아이디 다 떨어져서 번역불가2")
                     break
-                temp = re.sub('[a-zA-Z]', '', temp)
                 script = "arguments[0].innerHTML='" + temp + "'"
                 try:
                     # 한국어 자막 추가
