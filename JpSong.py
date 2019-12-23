@@ -45,6 +45,8 @@ play_list_url = ""
 ran_play = True
 # 일본어 폰트 사이즈
 font_size = 35
+# 동영상 세로폭 사이즈
+height = 300
 
 
 # 일본어 문자열을 한국어로 번역한 뒤 리턴 (네이버 파파고 nmt)
@@ -164,6 +166,17 @@ def getPlaylistLinks(url):
 def Play(_driver, _url):
     _driver.get(_url)
 
+    while True:
+        # 동영상 세로폭 수정
+        try:
+            element = _driver.find_element_by_id("player-container")
+            _driver.execute_script("arguments[0].setAttribute('style','height:" + str(height) + "px')",
+                                   element)
+            break
+        except:
+            pass
+        time.sleep(1)
+    
     # 재생 버튼으로 포커스 이동
     iframes = _driver.find_elements_by_tag_name('iframe')
     _driver.switch_to.frame(iframes[0])
