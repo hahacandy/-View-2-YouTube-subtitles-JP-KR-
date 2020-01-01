@@ -183,17 +183,19 @@ def Play(_driver, _url):
     time.sleep(1)
 
     # 재생 버튼 클릭
+    b_push = False
     while True:
         try:
             _driver.find_element_by_class_name("ytp-large-play-button").click()
             time.sleep(1)
-
+            b_push = True
         except:
             pass
 
         try:
-            driver.find_element_by_class_name("ytp-play-button").get_attribute('title')
-            break
+            if b_push:
+                driver.find_element_by_class_name("ytp-play-button").get_attribute('title')
+                break
         except:
             pass
         time.sleep(1)
